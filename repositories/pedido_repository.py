@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlmodel import Session, select
-from models.models import Pedido, DetallePedido, HistorialEstadoPedido
+from models.pedido import Pedido, DetallePedido, HistorialEstadoPedido
 from .base import BaseRepository
 
 

@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from db.database import get_session
-from models.models import Usuario, Rol
+from models.usuario import Usuario, Rol
 import jwt
 import os
 

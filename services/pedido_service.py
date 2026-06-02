@@ -2,7 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from fastapi import HTTPException
 from sqlmodel import select
-from models.models import Pedido, DetallePedido, HistorialEstadoPedido, Producto, EstadoPedido
+from models.pedido import Pedido, DetallePedido, HistorialEstadoPedido, EstadoPedido
+from models.producto import Producto
 from schemas.schemas import PedidoCreate
 from unit_of_work.uow import UnitOfWork
 
@@ -72,7 +73,7 @@ class PedidoService:
                 notas=data.notas,
             )
             self.uow.pedidos.add(pedido)
-            self.uow.commit()
+            self.uow.session.flush()    # obtiene ID sin commit
             self.uow.refresh(pedido)
 
             for det in detalles:
@@ -86,9 +87,10 @@ class PedidoService:
                 cambiado_por_id=usuario_id,
             ))
 
-            self.uow.commit()
-            self.uow.refresh(pedido)
-            return pedido
+            # __exit__ commitea todo
+
+        self.uow.refresh(pedido)
+        return pedido
 
     def cambiar_estado(self, pedido_id: int, nuevo_estado_codigo: str, cambiado_por_id: int):
         with self.uow:
@@ -119,9 +121,10 @@ class PedidoService:
             pedido.estado_actual_id = estado_nuevo.id
             pedido.updated_at = datetime.utcnow()
             self.uow.pedidos.add(pedido)
-            self.uow.commit()
-            self.uow.refresh(pedido)
-            return pedido
+            # __exit__ commitea
+
+        self.uow.refresh(pedido)
+        return pedido
 
     def obtener_historial(self, pedido_id: int) -> list:
         pedido = self.obtener_pedido(pedido_id)

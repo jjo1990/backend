@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlmodel import Session, select
-from models.models import Ingrediente
+from models.ingrediente import Ingrediente
 from .base import BaseRepository
 
 class IngredienteRepository(BaseRepository[Ingrediente]):

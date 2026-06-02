@@ -1,6 +1,6 @@
 from typing import Optional, List
 from sqlmodel import Session, select
-from models.models import Categoria
+from models.categoria import Categoria
 from .base import BaseRepository
 
 class CategoriaRepository(BaseRepository[Categoria]):

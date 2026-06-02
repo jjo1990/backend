@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import HTTPException
-from models.models import Producto
+from models.producto import Producto
 from schemas.schemas import ProductoCreate, ProductoUpdate
 from unit_of_work.uow import UnitOfWork
 
@@ -21,11 +21,11 @@ class ProductoService:
         with self.uow:
             categoria_ids = data.categoria_ids
             ingrediente_ids = data.ingrediente_ids
-            
+
             producto_data = data.model_dump(exclude={"categoria_ids", "ingrediente_ids"})
             nuevo = Producto(**producto_data)
             self.uow.productos.add(nuevo)
-            self.uow.commit()
+            self.uow.session.flush()      # obtiene ID sin commit
             self.uow.refresh(nuevo)
 
             # Vincular categorías
@@ -40,9 +40,10 @@ class ProductoService:
                     raise HTTPException(status_code=404, detail=f"Ingrediente {ing_id} no encontrado")
                 self.uow.productos.add_producto_ingrediente(nuevo.id, ing_id)
 
-            self.uow.commit()
-            self.uow.refresh(nuevo)
-            return nuevo
+            # __exit__ commitea todo
+
+        self.uow.refresh(nuevo)
+        return nuevo
 
     def actualizar_producto(self, producto_id: int, cambios: ProductoUpdate):
         with self.uow:
@@ -65,16 +66,17 @@ class ProductoService:
             datos = cambios.model_dump(exclude_unset=True, exclude={"categoria_ids", "ingrediente_ids"})
             for campo, valor in datos.items():
                 setattr(producto, campo, valor)
-            
+
             producto.updated_at = datetime.utcnow()
             self.uow.productos.add(producto)
-            self.uow.commit()
-            self.uow.refresh(producto)
-            return producto
+            # __exit__ commitea
+
+        self.uow.refresh(producto)
+        return producto
 
     def eliminar_producto(self, producto_id: int):
         with self.uow:
             producto = self.obtener_producto(producto_id)
             producto.deleted_at = datetime.utcnow()
             self.uow.productos.add(producto)
-            self.uow.commit()
+            # __exit__ commitea

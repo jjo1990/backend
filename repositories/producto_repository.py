@@ -1,6 +1,7 @@
 from typing import Optional, List
 from sqlmodel import Session, select
-from models.models import Producto, ProductoCategoria, ProductoIngrediente
+from models.producto import Producto
+from models.tablas_intermedias import ProductoCategoria, ProductoIngrediente
 from .base import BaseRepository
 
 class ProductoRepository(BaseRepository[Producto]):

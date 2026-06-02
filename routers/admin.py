@@ -1,16 +1,25 @@
 from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
-from datetime import datetime
 
 from db.database import get_session
-from models.models import Usuario, Rol, UsuarioRol
+from models.usuario import Usuario, Rol, UsuarioRol
+from models.usuario import Usuario as UsuarioModel
 from schemas.schemas import UserResponse
-from dependencies import get_current_user, require_role, CurrentUser
-from models.models import Usuario as UsuarioModel
+from dependencies import require_role
+from services.admin_service import AdminService
+from unit_of_work.uow import UnitOfWork
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
 SessionDep = Annotated[Session, Depends(get_session)]
+
+
+def get_admin_service(session: SessionDep) -> AdminService:
+    uow = UnitOfWork(session)
+    return AdminService(uow)
+
+
+AdminServiceDep = Annotated[AdminService, Depends(get_admin_service)]
 
 
 @router.get("/usuarios", response_model=List[UserResponse])
@@ -41,43 +50,16 @@ def listar_usuarios(
 def asignar_roles(
     usuario_id: int,
     roles_data: dict,
-    session: SessionDep,
+    service: AdminServiceDep,
     current_user: UsuarioModel = Depends(require_role(["ADMIN"])),
 ):
-    usuario = session.get(Usuario, usuario_id)
-    if not usuario or usuario.deleted_at:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    viejos = session.exec(select(UsuarioRol).where(UsuarioRol.usuario_id == usuario_id)).all()
-    for v in viejos:
-        session.delete(v)
-
-    for codigo in roles_data.get("roles", []):
-        rol = session.exec(select(Rol).where(Rol.codigo == codigo)).first()
-        if rol:
-            session.add(UsuarioRol(usuario_id=usuario_id, rol_id=rol.id))
-
-    session.commit()
-    session.refresh(usuario)
-
-    roles = [ur.rol.codigo for ur in usuario.roles]
-    return UserResponse(
-        id=usuario.id, email=usuario.email, nombre=usuario.nombre,
-        apellido=usuario.apellido, telefono=usuario.telefono,
-        activo=usuario.activo, roles=roles,
-    )
+    return service.asignar_roles(usuario_id, roles_data)
 
 
 @router.patch("/usuarios/{usuario_id}/deactivate")
 def deactivate_user(
     usuario_id: int,
-    session: SessionDep,
+    service: AdminServiceDep,
     current_user: UsuarioModel = Depends(require_role(["ADMIN"])),
 ):
-    usuario = session.get(Usuario, usuario_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    usuario.deleted_at = datetime.utcnow()
-    session.add(usuario)
-    session.commit()
-    return {"message": "Usuario desactivado"}
+    return service.deactivate_user(usuario_id)

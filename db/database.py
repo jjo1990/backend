@@ -34,7 +34,8 @@ def get_session():
 def seed_data():
     """Crea datos iniciales obligatorios: roles, estados de pedido, formas de pago y admin"""
     from datetime import datetime
-    from models.models import Rol, EstadoPedido, FormaPago, Usuario, UsuarioRol
+    from models.usuario import Rol, Usuario, UsuarioRol
+    from models.pedido import EstadoPedido, FormaPago
     import bcrypt
 
     with Session(engine) as session:

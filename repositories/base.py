@@ -1,6 +1,5 @@
 from typing import TypeVar, Generic, Type, Optional, List
-from sqlmodel import Session, select
-from models.models import SQLModel
+from sqlmodel import Session, select, SQLModel
 
 T = TypeVar("T", bound=SQLModel)
 

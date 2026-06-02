@@ -7,7 +7,8 @@ from unit_of_work.uow import UnitOfWork
 from services.pedido_service import PedidoService
 from schemas.schemas import PedidoCreate, PedidoRead, PedidoDetailRead, HistorialEstadoRead, EstadoUpdate, DetallePedidoRead, FormaPagoRead, EstadoPedidoRead
 from dependencies import get_current_user, require_role, CurrentUser
-from models.models import Usuario as UsuarioModel, EstadoPedido, FormaPago
+from models.usuario import Usuario as UsuarioModel
+from models.pedido import EstadoPedido, FormaPago
 
 router = APIRouter(prefix="/api/v1/pedidos", tags=["Pedidos"])
 SessionDep = Annotated[Session, Depends(get_session)]
